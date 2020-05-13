@@ -1,0 +1,81 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <script src="//media.twiliocdn.com/sdk/js/video/releases/2.4.0/twilio-video.min.js"></script>
+    </head>
+    <body>
+
+    <div id="remote-media-div" class="video-view">
+        <div class="lds-ripple" id="waiting"><div></div><div></div></div>    </di>
+    <div>
+        <a href="#" class="start-call" onClick="startCall()">Start call</a>
+    <div>
+    <div>
+        <a href="/" class="end-call">End call</a>
+    <div>
+    </body>
+    <script type="text/javascript">
+
+        var token = JSON.parse('{{ token | tojson | safe }}');
+        console.log(token)
+
+        const Video = Twilio.Video; // global video object
+
+        function startCall() {
+            showWaiting(true);
+            Video.connect(token.token , { name:'example', 
+                                            audio: true, 
+                                            video: { width: 640 }  }).then(room => {
+                
+                console.log(`Successfully joined a Room: ${room}`);
+                room.on('participantConnected', participant => {
+                    console.log(`A remote Participant connected: ${participant}`);
+
+                    participant.tracks.forEach(publication => {
+                        if (publication.isSubscribed) {
+                            const track = publication.track;
+                            document.getElementById('remote-media-div').appendChild(track.attach());
+                            showWaiting(false);
+                        }
+                    });
+
+                    participant.on('trackSubscribed', track => {
+                        document.getElementById('remote-media-div').appendChild(track.attach());
+                        showWaiting(false);
+                    });
+                });
+
+                room.participants.forEach(participant => {
+                participant.tracks.forEach(publication => {
+                    if (publication.track) {
+                    document.getElementById('remote-media-div').appendChild(track.attach());
+                    showWaiting(false);
+                    }
+                });
+
+                participant.on('trackSubscribed', track => {
+                    document.getElementById('remote-media-div').appendChild(track.attach());
+                    showWaiting(false);
+                    });
+                });
+            
+            
+            }, error => {
+                console.error(`Unable to connect to Room: ${error.message}`);
+            });
+        }
+
+        function showWaiting(show) {
+            var spantext = document.getElementById("waiting");
+
+            if(!show) {
+                spantext.setAttribute("style", "visibility: hidden;");
+            }
+            else {
+                spantext.setAttribute("style", "visibility: visible;");
+            }
+        }
+    </script>
+
+</html>
